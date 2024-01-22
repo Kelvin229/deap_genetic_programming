@@ -5,7 +5,23 @@ from sklearn.preprocessing import LabelEncoder
 
 
 class DataHandler:
+    """
+   Handles the loading and preprocessing of rice dataset.
+
+   Attributes:
+       file_path (str): The file path to the dataset.
+       X_train (DataFrame): The training feature dataset.
+       X_test (DataFrame): The testing feature dataset.
+       y_train (Series): The training target values.
+       y_test (Series): The testing target values.
+   """
     def __init__(self, file_path):
+        """
+        Initializes the DataHandler with the dataset file path.
+
+        Args:
+            file_path (str): The file path to the dataset.
+        """
         self.file_path = file_path
         self.X_train = None
         self.X_test = None
@@ -13,6 +29,12 @@ class DataHandler:
         self.y_test = None
 
     def load_data(self):
+        """
+       Loads the data from an ARFF file into a pandas DataFrame.
+
+       Returns:
+           DataFrame: The loaded data if successful, None otherwise.
+       """
         try:
             data, meta = arff.loadarff(self.file_path)
             df = pd.DataFrame(data)
@@ -27,6 +49,10 @@ class DataHandler:
             return None
 
     def preprocess(self):
+        """
+        Preprocesses the loaded data by encoding categorical variables and
+        splitting the data into training and testing sets.
+        """
         df = self.load_data()
         if df is not None:
             X = df.drop('Class', axis=1)

@@ -2,11 +2,27 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy
+import numpy as np
 
 from partA.genetic_programming import GeneticProgramming
 
+# Constants
 NUM_GENERATIONS = 30
 POPULATION_SIZE = 500
+SEEDS = range(10)
+NUM_RUNS = 10
+RESULT_DIR = (r'C:\Users\path\to\partA\results')
+
+# Parameter sets for experiments
+PARAMETER_SETS = [
+    (0.9, 0.1, 2),  # 90% crossover, 10% mutation, 2 elitism (configuration i)
+    (1.0, 0.0, 2),  # 100% crossover, 0% mutation, 2 elitism (configuration ii)
+    (0.0, 1.0, 2),  # 0% crossover, 100% mutation, 2 elitism (configuration iii)
+    (0.9, 0.1, 0),  # Elitism test: same as (i) but with no elitism
+]
+
+if not os.path.exists(RESULT_DIR):
+    os.makedirs(RESULT_DIR)
 
 
 class ExperimentRunner:
@@ -16,8 +32,7 @@ class ExperimentRunner:
    configurations to test and compare their performances.
    """
 
-    def __init__(self, filename,
-                 result_dir="C:\\Users\\Path\\to\\A1\\partA\\results"):
+    def __init__(self, filename):
         """
        Initializes the experiment runner.
 
@@ -26,38 +41,26 @@ class ExperimentRunner:
         self.filename = filename
         self.num_generations = NUM_GENERATIONS
         self.population_size = POPULATION_SIZE
-        self.result_dir = result_dir
-        if not os.path.exists(self.result_dir):
-            os.makedirs(self.result_dir)
-        print(f"Results will be saved in: {self.result_dir}")
+        print(f"Results will be saved in: {RESULT_DIR}")
 
     def run_experiments(self):
         """
         Runs the experiments with various configurations and collects the results.
         Adjusted to meet the specific requirements of the assignment.
         """
-        seeds = range(10)
-        num_runs = 10
-        parameter_sets = [
-            (0.9, 0.1, 2),  # 90% crossover, 10% mutation, 2 elitism (configuration i)
-            (1.0, 0.0, 2),  # 100% crossover, 0% mutation, 2 elitism (configuration ii)
-            (0.0, 1.0, 2),  # 0% crossover, 100% mutation, 2 elitism (configuration iii)
-            (0.9, 0.1, 0),  # Elitism test: same as (i) but with no elitism
-        ]
         results = {}
 
-        for seed in seeds:
-            for crossover_rate, mutation_rate, elitism in parameter_sets:
+        for seed in SEEDS:
+            for crossover_rate, mutation_rate, elitism in PARAMETER_SETS:
                 param_key = (crossover_rate, mutation_rate, elitism)
                 if param_key not in results:
                     results[param_key] = {
-                        'avg_fitness': numpy.zeros(self.num_generations),
-                        'best_fitness': numpy.full(self.num_generations, numpy.inf),
-                        'generations': numpy.arange(self.num_generations)
+                        'avg_fitness': np.zeros(self.num_generations),
+                        'best_fitness': np.full(self.num_generations, np.inf),
+                        'generations': np.arange(self.num_generations)
                     }
 
-                for run in range(num_runs):
-                    seed = run
+                for run in range(NUM_RUNS):
                     gp_instance = GeneticProgramming(
                         self.filename,
                         seed,
@@ -70,11 +73,11 @@ class ExperimentRunner:
                     # Process the logbook
                     for record in log:
                         gen = record['gen']
-                        results[param_key]['avg_fitness'][gen] += record['avg'] / num_runs
+                        results[param_key]['avg_fitness'][gen] += record['avg'] / NUM_RUNS
                         results[param_key]['best_fitness'][gen] = min(results[param_key]['best_fitness'][gen],
                                                                       record['min'])
 
-                # After all runs for a set of parameters, plot the aggregated results
+                # Plot the aggregated results
                 self.plot_results(results[param_key], f"cx_{crossover_rate}_mut_{mutation_rate}_elite_{elitism}")
 
     def plot_results(self, results, title_suffix):
@@ -118,7 +121,7 @@ class ExperimentRunner:
         plt.tight_layout()
 
         filename = f"experiment_{title_suffix}.png"
-        filepath = os.path.join(self.result_dir, filename)
+        filepath = os.path.join(RESULT_DIR, filename)
         plt.savefig(filepath)
         print(f"Saved plot to {filepath}")
         plt.close(fig)

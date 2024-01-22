@@ -10,8 +10,31 @@ from matplotlib import pyplot as plt
 
 
 class GPEngine:
-    def __init__(self, data_handler, population_size=700, crossover_probability=0.9, mutation_probability=0.1,
-                 number_of_generations=60, elitism_size=2):
+    """
+    Encapsulates the setup and execution of a genetic programming process
+    using DEAP for the rice classification task.
+
+    Attributes:
+        data_handler (DataHandler): An instance of the DataHandler class to manage data loading and preprocessing.
+        population_size (int): The size of the genetic programming population.
+        crossover_probability (float): Probability of crossover operation.
+        mutation_probability (float): Probability of mutation operation.
+        number_of_generations (int): The number of generations to run the genetic programming for.
+        elitism_size (int): The number of top individuals to carry over to the next generation without changes.
+    """
+    def __init__(self, data_handler, population_size=100, crossover_probability=0.7, mutation_probability=0.2,
+                 number_of_generations=30, elitism_size=1):
+        """
+       Constructor for GPEngine.
+
+       Args:
+           data_handler (DataHandler): The data handler instance with preprocessed data.
+           population_size (int): The size of the genetic programming population.
+           crossover_probability (float): The probability of crossover between individuals.
+           mutation_probability (float): The probability of mutation of individuals.
+           number_of_generations (int): The number of generations to evolve.
+           elitism_size (int): The number of best individuals to carry over to the next generation.
+       """
         self.data_handler = data_handler
         self.population_size = population_size
         self.crossover_probability = crossover_probability
@@ -31,6 +54,12 @@ class GPEngine:
         self.verbose = True
 
     def _create_primitive_set(self):
+        """
+        Creates the primitive set for the genetic programming process.
+
+        Returns:
+            deap.gp.PrimitiveSet: The configured primitive set.
+        """
         pset = gp.PrimitiveSet("MAIN", arity=self.data_handler.X_train.shape[1])
         pset.addPrimitive(operator.add, 2)
         pset.addPrimitive(operator.sub, 2)
@@ -46,13 +75,31 @@ class GPEngine:
         return pset
 
     def _evalFitness(self, individual):
+        """
+       Evaluates the fitness of an individual based on its accuracy of classifying
+       the training data.
+
+       Args:
+           individual (deap.creator.Individual): The individual to evaluate.
+
+       Returns:
+           tuple: A one-element tuple containing the accuracy of the individual.
+       """
+        # Compile the individual's code to a function
         func = self.toolbox.compile(expr=individual)
+        # Predict classes for the training set using the individual's function
         predictions = np.array([np.clip(np.round(func(*row)), 0, 1) for row in self.data_handler.X_train.values])
-        correct = np.sum(predictions == self.data_handler.y_train)  # Removed .values
+        # Calculate the number of correct predictions
+        correct = np.sum(predictions == self.data_handler.y_train)
+        # Calculate accuracy
         accuracy = correct / len(self.data_handler.y_train)
         return accuracy,
 
     def _setup_deap(self):
+        """
+       Sets up the genetic programming environment using DEAP, including
+       fitness, individuals, population, and the genetic operators.
+       """
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
 
@@ -67,6 +114,13 @@ class GPEngine:
         self.toolbox.register("mutate", gp.mutUniform, expr=self.toolbox.expr_mut, pset=self.pset)
 
     def run(self):
+        """
+       Executes the genetic programming algorithm.
+
+       Returns:
+           tuple: A tuple containing the final population, the logbook with the recorded
+           statistics, the hall of fame, and the accuracy of the best individual on the test set.
+       """
         pop = self.toolbox.population(n=self.population_size)
         hof = tools.HallOfFame(self.elitism_size)
 
@@ -123,7 +177,14 @@ class GPEngine:
         return pop, self.logbook, hof, test_accuracy
 
     def save_results(self, hof, filename="best_individual.txt"):
-        # Ensure the directory exists
+        """
+       Saves the best individual to a text file.
+
+       Args:
+           hof (deap.tools.HallOfFame): The hall of fame object containing the best individuals.
+           filename (str): The path to the file where the best individual will be saved.
+       """
+        # Ensures the directory exists
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         # Save the file
@@ -131,6 +192,13 @@ class GPEngine:
             f.write(str(hof[0]))
 
     def plot_fitness(self, log, filename="fitness_over_generations.png"):
+        """
+        Plots the fitness evolution over the generations.
+
+        Args:
+            log (deap.tools.Logbook): The logbook containing the statistics of the evolution.
+            filename (str): The path to the file where the plot will be saved.
+        """
         # Ensure the output directory exists
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
