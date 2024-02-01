@@ -10,7 +10,6 @@ from partA.genetic_programming import GeneticProgramming
 NUM_GENERATIONS = 30
 POPULATION_SIZE = 500
 SEEDS = range(10)
-NUM_RUNS = 10
 RESULT_DIR = (r'C:\Users\path\to\partA\results')
 
 # Parameter sets for experiments
@@ -59,22 +58,21 @@ class ExperimentRunner:
                     'generations': np.arange(self.num_generations)
                 }
             for seed in SEEDS:
-                for run in range(NUM_RUNS):
-                    gp_instance = GeneticProgramming(
-                        self.filename,
-                        seed,
-                        POPULATION_SIZE,
-                        NUM_GENERATIONS,
-                        hof_size=elitism
-                    )
-                    _, log, _ = gp_instance.run(crossover_rate, mutation_rate, elitism > 0)
+                gp_instance = GeneticProgramming(
+                    self.filename,
+                    seed,
+                    POPULATION_SIZE,
+                    NUM_GENERATIONS,
+                    hof_size=elitism
+                )
+                _, log, _ = gp_instance.run(crossover_rate, mutation_rate, elitism > 0)
 
-                    # Process the logbook
-                    for record in log:
-                        gen = record['gen']
-                        results[param_key]['avg_fitness'][gen] += record['avg'] / NUM_RUNS
-                        results[param_key]['best_fitness'][gen] = min(results[param_key]['best_fitness'][gen],
-                                                                      record['min'])
+                # Process the logbook
+                for record in log:
+                    gen = record['gen']
+                    results[param_key]['avg_fitness'][gen] += record['avg'] / len(SEEDS)
+                    results[param_key]['best_fitness'][gen] = min(results[param_key]['best_fitness'][gen],
+                                                                  record['min'])
 
             # Plot the aggregated results
             self.plot_results(results[param_key], f"cx_{crossover_rate}_mut_{mutation_rate}_elite_{elitism}")
