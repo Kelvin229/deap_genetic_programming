@@ -225,4 +225,4 @@ class GeneticProgramming:
             log.record(gen=gen, nevals=len(invalid_ind), **record)
             print(log.stream)
 
-            return pop, log, hof
+        return pop, log, hof

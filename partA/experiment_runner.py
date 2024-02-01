@@ -50,16 +50,15 @@ class ExperimentRunner:
         """
         results = {}
 
-        for seed in SEEDS:
-            for crossover_rate, mutation_rate, elitism in PARAMETER_SETS:
-                param_key = (crossover_rate, mutation_rate, elitism)
-                if param_key not in results:
-                    results[param_key] = {
-                        'avg_fitness': np.zeros(self.num_generations),
-                        'best_fitness': np.full(self.num_generations, np.inf),
-                        'generations': np.arange(self.num_generations)
-                    }
-
+        for crossover_rate, mutation_rate, elitism in PARAMETER_SETS:
+            param_key = (crossover_rate, mutation_rate, elitism)
+            if param_key not in results:
+                results[param_key] = {
+                    'avg_fitness': np.zeros(self.num_generations),
+                    'best_fitness': np.full(self.num_generations, np.inf),
+                    'generations': np.arange(self.num_generations)
+                }
+            for seed in SEEDS:
                 for run in range(NUM_RUNS):
                     gp_instance = GeneticProgramming(
                         self.filename,
@@ -77,8 +76,8 @@ class ExperimentRunner:
                         results[param_key]['best_fitness'][gen] = min(results[param_key]['best_fitness'][gen],
                                                                       record['min'])
 
-                # Plot the aggregated results
-                self.plot_results(results[param_key], f"cx_{crossover_rate}_mut_{mutation_rate}_elite_{elitism}")
+            # Plot the aggregated results
+            self.plot_results(results[param_key], f"cx_{crossover_rate}_mut_{mutation_rate}_elite_{elitism}")
 
     def plot_results(self, results, title_suffix):
         print("Plotting results...")
