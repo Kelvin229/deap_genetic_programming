@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy
 import numpy as np
 
-from partA.genetic_programming import GeneticProgramming
+from .genetic_programming import GeneticProgramming
 
 # Constants
 NUM_GENERATIONS = 30

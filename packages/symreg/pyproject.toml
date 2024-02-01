@@ -1,0 +1,26 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "symreg"
+version = "0.1.0"
+description = "symbolic regression using genetic programming"
+requires-python = ">=3.11"
+readme = "README.md"
+authors = [
+    { name = "Gideon Oludeyi", email = "49620086+gideonoludeyi@users.noreply.github.com" },
+    { name = "Kelvin Odinamadu", email = "ke20od@gmail.com" },
+]
+dependencies = [
+    "deap>=1.4.1, <2.0.0",
+    "pandas>=2.2.0, <3.0.0",
+    "matplotlib>=3.8.2, <4.0.0",
+]
+
+[project.scripts]
+symreg = "symreg:main"
+
+[tool.pdm]
+distribution = true
+
