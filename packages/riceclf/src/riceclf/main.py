@@ -1,8 +1,8 @@
 import logging
 import os
 
-from data_handler import DataHandler
-from gp_engine import GPEngine
+from .data_handler import DataHandler
+from .gp_engine import GPEngine
 
 # Configuration parameters
 CONFIG = {
