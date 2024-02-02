@@ -1,6 +1,6 @@
 4P82_a1.pdf
-results/
-output/
+symreg_results/
+riceclf_output/
 a1_marking.pdf
 
 tmp/*

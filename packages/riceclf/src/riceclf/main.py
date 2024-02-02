@@ -6,8 +6,8 @@ from .gp_engine import GPEngine
 
 # Configuration parameters
 CONFIG = {
-    'dataset_path': r'C:\Users\Path\to\partB\Rice_Cammeo_Osmancik.arff',
-    'output_path': r'C:\Users\Path\to\partB\output',
+    'dataset_path': r'packages\riceclf\src\riceclf\Rice_Cammeo_Osmancik.arff',
+    'output_path': r'riceclf_output',
     'population_size': 100,
     'crossover_probability': 0.7,
     'mutation_probability': 0.2,

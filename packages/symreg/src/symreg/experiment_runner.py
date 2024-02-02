@@ -10,7 +10,7 @@ from .genetic_programming import GeneticProgramming
 NUM_GENERATIONS = 30
 POPULATION_SIZE = 500
 SEEDS = range(10)
-RESULT_DIR = (r'C:\Users\path\to\partA\results')
+RESULT_DIR = (r'symreg_results')
 
 # Parameter sets for experiments
 PARAMETER_SETS = [
