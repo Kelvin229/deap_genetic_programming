@@ -70,38 +70,44 @@ class ExperimentRunner:
         fig, ax1 = plt.subplots(figsize=(10, 8))
 
         # Plot Average Fitness on a logarithmic scale if it contains non-zero values
-        color = 'tab:blue'
+        color = "tab:blue"
         ax1.set_xlabel("Generation")
         ax1.set_ylabel("Average Fitness", color=color)
-        ax1.plot(results['generations'], results['avg_fitness'], label='Average Fitness', color=color)
-        ax1.tick_params(axis='y', labelcolor=color)
-        if np.all(results['avg_fitness'] > 0):  # Ensure all values are positive for log scale
-            ax1.set_yscale('log')
-
-        # Create a second y-axis for the Best Fitness
-        ax2 = ax1.twinx()
-        color = 'tab:red'
-        ax2.set_ylabel('Best Fitness', color=color)
-        ax2.plot(results['generations'], results['best_fitness'], label='Best Fitness', color=color, linestyle='--')
-        ax2.tick_params(axis='y', labelcolor=color)
-        if np.all(results['best_fitness'] > 0):  # Ensure all values are positive for log scale
-            ax2.set_yscale('log')
-        else:
+        ax1.plot(
+            results["generations"],
+            results["avg_fitness"],
+            label="Average Fitness",
+            color=color,
+        )
+        ax1.tick_params(axis="y", labelcolor=color)
+        ax1.set_yscale("log")
+        if not np.all(results["best_fitness"] > 0):
             # Annotate on the plot that best fitness achieved zero
-            ax2.annotate('Perfect fitness achieved!', xy=(1, 0), xycoords='axes fraction', fontsize=12,
-                         xytext=(-5, 5), textcoords='offset points',
-                         ha='right', va='bottom')
+            ax1.annotate(
+                "Perfect fitness achieved!",
+                xy=(1, 0),
+                xycoords="axes fraction",
+                fontsize=12,
+                xytext=(-5, 5),
+                textcoords="offset points",
+                ha="right",
+                va="bottom",
+            )
 
-        # Combine legends from both y-axes
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines + lines2, labels + labels2, loc='upper right')
+        # Create a second plot for the Best Fitness
+        color = "tab:red"
+        ax1.plot(
+            results["generations"],
+            results["best_fitness"],
+            label="Best Fitness",
+            color=color,
+            linestyle="--",
+        )
 
         plt.title(f"Fitness over Generations ({title_suffix})")
 
         # Set grid for both primary and secondary axes
-        ax1.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)
-        ax2.grid(False)  # Turn off grid for the secondary axis
+        ax1.grid(True, which="both", axis="both", linestyle="--", linewidth=0.5)
 
         plt.tight_layout()
 
@@ -110,7 +116,6 @@ class ExperimentRunner:
         plt.savefig(filepath)
         print(f"Saved plot to {filepath}")
         plt.close(fig)
-        plt.clf()
 
         print("Finished plotting.")
 
