@@ -1,12 +1,11 @@
-import operator
-import math
 import functools
-import os
+import math
+import operator
 import random
-import pandas as pd
-import numpy
 
-from deap import gp, creator, base, tools, algorithms
+import numpy
+import pandas as pd
+from deap import gp, creator, base, tools
 
 
 class GeneticProgramming:
@@ -15,17 +14,17 @@ class GeneticProgramming:
     It uses the DEAP library to create and evolve a population based on given parameters.
     """
 
-    def __init__(self, filename, seed=0, population_size=300, num_generations=40, hof_size=1):
+    def __init__(self, filepath, seed=0, population_size=300, num_generations=40, hof_size=1):
         """
         Initializes the genetic programming environment.
 
-        :param filename: str, the path to the data file
+        :param filepath: str, the path to the data file
         :param seed: int, the seed for random number generation
         :param population_size: int, the size of the population
         :param num_generations: int, the number of generations for evolution
         :param hof_size: int, the size of the hall of fame
         """
-        self.filename = filename
+        self.filepath = filepath
         self.seed = seed
         self.population_size = population_size
         self.num_generations = num_generations
@@ -82,11 +81,8 @@ class GeneticProgramming:
         """
         Loads training data from the specified file.
         """
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        data_file_path = os.path.join(script_dir, self.filename)
-
         # Read the CSV file
-        data = pd.read_csv(data_file_path)
+        data = pd.read_csv(self.filepath)
 
         # Print the DataFrame to check its structure
         print("DataFrame:")
@@ -148,7 +144,7 @@ class GeneticProgramming:
 
         :param crossover_rate: float, the rate at which crossover is performed
         :param mutation_rate: float, the rate at which mutation is performed
-        :param elitism: bool, whether to use elitism in evolution
+        :param use_elitism: bool, whether to use elitism in evolution
         :return: tuple, the final population, the log, and the hall of fame
         """
         diversity_threshold = 0.1  # This value might need to be tuned based on your problem

@@ -1,55 +1,43 @@
 import os
 
 import matplotlib.pyplot as plt
-import numpy
 import numpy as np
-
 from .genetic_programming import GeneticProgramming
-
-# Constants
-NUM_GENERATIONS = 30
-POPULATION_SIZE = 500
-SEEDS = range(10)
-RESULT_DIR = (r'symreg_results')
-
-# Parameter sets for experiments
-PARAMETER_SETS = [
-    (0.9, 0.1, 2),  # 90% crossover, 10% mutation, 2 elitism (configuration i)
-    (1.0, 0.0, 2),  # 100% crossover, 0% mutation, 2 elitism (configuration ii)
-    (0.0, 1.0, 2),  # 0% crossover, 100% mutation, 2 elitism (configuration iii)
-    (0.9, 0.1, 0),  # Elitism test: same as (i) but with no elitism
-]
-
-if not os.path.exists(RESULT_DIR):
-    os.makedirs(RESULT_DIR)
 
 
 class ExperimentRunner:
     """
-   This class handles running the experiments and plotting the results.
-   It creates multiple instances of the GeneticProgramming class with different
-   configurations to test and compare their performances.
-   """
+    This class handles running the experiments and plotting the results.
+    It creates multiple instances of the GeneticProgramming class with different
+    configurations to test and compare their performances.
+    """
 
-    def __init__(self, filename):
+    def __init__(self, filepath, num_generations, population_size, result_dir):
         """
-       Initializes the experiment runner.
+        Initializes the experiment runner.
 
-       :param filename: str, the path to the data file
-       """
-        self.filename = filename
-        self.num_generations = NUM_GENERATIONS
-        self.population_size = POPULATION_SIZE
-        print(f"Results will be saved in: {RESULT_DIR}")
+        :param filepath: str, the path to the data file
+        :param num_generations: int, the maximum number of generations for which the algorithm should run
+        :param population_size: int, the initial population size
+        :param result_dir: str, the path of the directory where results should be saved
+        """
+        self.filepath = filepath
+        self.num_generations = num_generations
+        self.population_size = population_size
+        self.result_dir = result_dir
+        print(f"Results will be saved in: {result_dir}")
 
-    def run_experiments(self):
+    def run_experiments(self, param_sets, seeds=range(10)):
         """
         Runs the experiments with various configurations and collects the results.
         Adjusted to meet the specific requirements of the assignment.
+
+        :param param_sets: Iterable[tuple[float, float, int]], a list of parameter configurations with which to run an experiment
+        :param seeds: Iterable[int], a list of random seeds with which to perform runs
         """
         results = {}
 
-        for crossover_rate, mutation_rate, elitism in PARAMETER_SETS:
+        for crossover_rate, mutation_rate, elitism in param_sets:
             param_key = (crossover_rate, mutation_rate, elitism)
             if param_key not in results:
                 results[param_key] = {
@@ -57,12 +45,12 @@ class ExperimentRunner:
                     'best_fitness': np.full(self.num_generations, np.inf),
                     'generations': np.arange(self.num_generations)
                 }
-            for seed in SEEDS:
+            for seed in seeds:
                 gp_instance = GeneticProgramming(
-                    self.filename,
+                    self.filepath,
                     seed,
-                    POPULATION_SIZE,
-                    NUM_GENERATIONS,
+                    self.population_size,
+                    self.num_generations,
                     hof_size=elitism
                 )
                 _, log, _ = gp_instance.run(crossover_rate, mutation_rate, elitism > 0)
@@ -70,7 +58,7 @@ class ExperimentRunner:
                 # Process the logbook
                 for record in log:
                     gen = record['gen']
-                    results[param_key]['avg_fitness'][gen] += record['avg'] / len(SEEDS)
+                    results[param_key]['avg_fitness'][gen] += record['avg'] / len(seeds)
                     results[param_key]['best_fitness'][gen] = min(results[param_key]['best_fitness'][gen],
                                                                   record['min'])
 
@@ -87,7 +75,7 @@ class ExperimentRunner:
         ax1.set_ylabel("Average Fitness", color=color)
         ax1.plot(results['generations'], results['avg_fitness'], label='Average Fitness', color=color)
         ax1.tick_params(axis='y', labelcolor=color)
-        if numpy.all(results['avg_fitness'] > 0):  # Ensure all values are positive for log scale
+        if np.all(results['avg_fitness'] > 0):  # Ensure all values are positive for log scale
             ax1.set_yscale('log')
 
         # Create a second y-axis for the Best Fitness
@@ -96,7 +84,7 @@ class ExperimentRunner:
         ax2.set_ylabel('Best Fitness', color=color)
         ax2.plot(results['generations'], results['best_fitness'], label='Best Fitness', color=color, linestyle='--')
         ax2.tick_params(axis='y', labelcolor=color)
-        if numpy.all(results['best_fitness'] > 0):  # Ensure all values are positive for log scale
+        if np.all(results['best_fitness'] > 0):  # Ensure all values are positive for log scale
             ax2.set_yscale('log')
         else:
             # Annotate on the plot that best fitness achieved zero
@@ -118,7 +106,7 @@ class ExperimentRunner:
         plt.tight_layout()
 
         filename = f"experiment_{title_suffix}.png"
-        filepath = os.path.join(RESULT_DIR, filename)
+        filepath = os.path.join(self.result_dir, filename)
         plt.savefig(filepath)
         print(f"Saved plot to {filepath}")
         plt.close(fig)
