@@ -25,7 +25,7 @@ parser.add_argument(
     "--input",
     dest="input_filepath",
     type=str,
-    default="training_data.csv",
+    default="packages/symreg/src/symreg/training_data.csv",
     required=False,
     help="the path to the training data CSV file [default: training_data.csv]",
 )
