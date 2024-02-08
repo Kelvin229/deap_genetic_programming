@@ -120,8 +120,8 @@ class GPEngine:
         Sets up the genetic programming environment using DEAP, including
         fitness, individuals, population, and the genetic operators.
         """
-        creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+        creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMin)
 
         self.toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=1, max_=2)
         self.toolbox.register(
@@ -238,8 +238,8 @@ class GPEngine:
 
         plt.figure(figsize=(10, 5))
         plt.plot(gen, avg_fit, label="Average Fitness")
-        plt.plot(gen, min_fit, label="Minimum Fitness")
-        plt.plot(gen, max_fit, label="Maximum (Best) Fitness")
+        plt.plot(gen, min_fit, label="Minimum (Best) Fitness")
+        plt.plot(gen, max_fit, label="Maximum Fitness")
         plt.xlabel("Generations")
         plt.ylabel("Fitness")
         plt.title("Fitness over Generations")
