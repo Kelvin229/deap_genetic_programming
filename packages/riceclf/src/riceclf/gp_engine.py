@@ -22,19 +22,27 @@ class GPEngine:
         number_of_generations (int): The number of generations to run the genetic programming for.
         elitism_size (int): The number of top individuals to carry over to the next generation without changes.
     """
-    def __init__(self, data_handler, population_size=100, crossover_probability=0.7, mutation_probability=0.2,
-                 number_of_generations=30, elitism_size=1):
-        """
-       Constructor for GPEngine.
 
-       Args:
-           data_handler (DataHandler): The data handler instance with preprocessed data.
-           population_size (int): The size of the genetic programming population.
-           crossover_probability (float): The probability of crossover between individuals.
-           mutation_probability (float): The probability of mutation of individuals.
-           number_of_generations (int): The number of generations to evolve.
-           elitism_size (int): The number of best individuals to carry over to the next generation.
-       """
+    def __init__(
+        self,
+        data_handler,
+        population_size=100,
+        crossover_probability=0.7,
+        mutation_probability=0.2,
+        number_of_generations=30,
+        elitism_size=1,
+    ):
+        """
+        Constructor for GPEngine.
+
+        Args:
+            data_handler (DataHandler): The data handler instance with preprocessed data.
+            population_size (int): The size of the genetic programming population.
+            crossover_probability (float): The probability of crossover between individuals.
+            mutation_probability (float): The probability of mutation of individuals.
+            number_of_generations (int): The number of generations to evolve.
+            elitism_size (int): The number of best individuals to carry over to the next generation.
+        """
         self.data_handler = data_handler
         self.population_size = population_size
         self.crossover_probability = crossover_probability
@@ -72,55 +80,73 @@ class GPEngine:
             return random.uniform(-1, 1)
 
         pset.addEphemeralConstant("rand101", functools.partial(rand101))
+        pset.renameArguments(
+            **{
+                f"ARG{i}": column
+                for i, column in enumerate(self.data_handler.X_train.columns)
+            }
+        )
         return pset
 
-    def _evalFitness(self, individual):
+    def _evalFitness(self, individual, X=None, y=None):
         """
-       Evaluates the fitness of an individual based on its accuracy of classifying
-       the training data.
+        Evaluates the fitness of an individual based on its accuracy of classifying
+        the data.
 
-       Args:
-           individual (deap.creator.Individual): The individual to evaluate.
+        Args:
+            individual (deap.creator.Individual): The individual to evaluate.
+            X (pd.DataFrame): the data with which to evaluate the individual's fitness [defaults to the training data]
+            y (pd.Series): the label of the data with which to evaluate the individual's fitness [defaults to the labels of the training data]
 
-       Returns:
-           tuple: A one-element tuple containing the accuracy of the individual.
-       """
+        Returns:
+            tuple: A one-element tuple containing the accuracy of the individual on the data.
+        """
+        X = X if X is not None else self.data_handler.X_train
+        y = y if y is not None else self.data_handler.y_train
         # Compile the individual's code to a function
         func = self.toolbox.compile(expr=individual)
         # Predict classes for the training set using the individual's function
-        predictions = np.array([np.clip(np.round(func(*row)), 0, 1) for row in self.data_handler.X_train.values])
+        predictions = np.array(
+            [np.clip(np.round(func(*row)), 0, 1) for row in X.values]
+        )
         # Calculate the number of correct predictions
-        correct = np.sum(predictions == self.data_handler.y_train)
+        correct = np.sum(predictions == y)
         # Calculate accuracy
-        accuracy = correct / len(self.data_handler.y_train)
-        return accuracy,
+        accuracy = correct / len(y)
+        return (accuracy,)
 
     def _setup_deap(self):
         """
-       Sets up the genetic programming environment using DEAP, including
-       fitness, individuals, population, and the genetic operators.
-       """
+        Sets up the genetic programming environment using DEAP, including
+        fitness, individuals, population, and the genetic operators.
+        """
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
         creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
 
         self.toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=1, max_=2)
-        self.toolbox.register("individual", tools.initIterate, creator.Individual, self.toolbox.expr)
-        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
+        self.toolbox.register(
+            "individual", tools.initIterate, creator.Individual, self.toolbox.expr
+        )
+        self.toolbox.register(
+            "population", tools.initRepeat, list, self.toolbox.individual
+        )
         self.toolbox.register("compile", gp.compile, pset=self.pset)
         self.toolbox.register("evaluate", self._evalFitness)
         self.toolbox.register("select", tools.selTournament, tournsize=5)
         self.toolbox.register("mate", gp.cxOnePoint)
         self.toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
-        self.toolbox.register("mutate", gp.mutUniform, expr=self.toolbox.expr_mut, pset=self.pset)
+        self.toolbox.register(
+            "mutate", gp.mutUniform, expr=self.toolbox.expr_mut, pset=self.pset
+        )
 
     def run(self):
         """
-       Executes the genetic programming algorithm.
+        Executes the genetic programming algorithm.
 
-       Returns:
-           tuple: A tuple containing the final population, the logbook with the recorded
-           statistics, the hall of fame, and the accuracy of the best individual on the test set.
-       """
+        Returns:
+            tuple: A tuple containing the final population, the logbook with the recorded
+            statistics, the hall of fame, and the accuracy of the best individual on the test set.
+        """
         pop = self.toolbox.population(n=self.population_size)
         hof = tools.HallOfFame(self.elitism_size)
 
@@ -153,7 +179,11 @@ class GPEngine:
                 ind.fitness.values = fit
 
             # The elite individuals are directly copied to the next generation
-            elites = sorted(pop, key=lambda x: x.fitness.values[0], reverse=True)[:self.elitism_size]
+            elites = sorted(
+                pop,
+                key=lambda x: x.fitness.values[0],
+                reverse=True,
+            )[: self.elitism_size]
             pop[:] = offspring + elites
 
             # Update the hall of fame with the new population
@@ -167,10 +197,9 @@ class GPEngine:
 
         # Apply the compiled function to each row in the test set
         best_ind = hof[0]
-        func = self.toolbox.compile(expr=best_ind)
-        test_predictions = np.array([np.clip(np.round(func(*row)), 0, 1) for row in self.data_handler.X_test.values])
-        correct_test = np.sum(test_predictions == self.data_handler.y_test)
-        test_accuracy = correct_test / len(self.data_handler.y_test)
+        (test_accuracy,) = self.toolbox.evaluate(
+            best_ind, X=self.data_handler.X_test, y=self.data_handler.y_test
+        )
 
         logging.info(f"Test Accuracy of the best individual: {test_accuracy:.2f}")
 
@@ -178,12 +207,12 @@ class GPEngine:
 
     def save_results(self, hof, filename="best_individual.txt"):
         """
-       Saves the best individual to a text file.
+        Saves the best individual to a text file.
 
-       Args:
-           hof (deap.tools.HallOfFame): The hall of fame object containing the best individuals.
-           filename (str): The path to the file where the best individual will be saved.
-       """
+        Args:
+            hof (deap.tools.HallOfFame): The hall of fame object containing the best individuals.
+            filename (str): The path to the file where the best individual will be saved.
+        """
         # Ensures the directory exists
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 

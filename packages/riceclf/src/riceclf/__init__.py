@@ -1,10 +1,10 @@
 import sys
 
-from .main import CONFIG, main as program
+from .main import main as program
 
 
 def main() -> int:
-    program(CONFIG)
+    program()
     return 0
 
 
