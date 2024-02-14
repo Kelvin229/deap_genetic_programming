@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 from scipy.io import arff
 from sklearn.model_selection import train_test_split
@@ -16,18 +17,18 @@ class DataHandler:
         y_test (Series): The testing target values.
     """
 
-    def __init__(self, file_path):
+    def __init__(self, file_path, test_size=0.2, random_state=42):
         """
-        Initializes the DataHandler with the dataset file path.
-
-        Args:
+        Initializes the DataHandler with the dataset file path. Args:
             file_path (str): The file path to the dataset.
         """
         self.file_path = file_path
+        self.test_size = test_size
         self.X_train = None
         self.X_test = None
         self.y_train = None
         self.y_test = None
+        self.random_state = random_state
 
     def load_data(self):
         """
@@ -38,7 +39,7 @@ class DataHandler:
         """
         data, meta = arff.loadarff(self.file_path)
         df = pd.DataFrame(data)
-        print(f"Columns in the data: {df.columns}")  # Debug print statement
+        logging.debug("Columns in the data: %s", df.columns)
         if "Class" in df.columns:
             df["Class"] = df["Class"].str.decode(
                 "utf-8"
@@ -61,5 +62,5 @@ class DataHandler:
         y_encoded = le.fit_transform(y)
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y_encoded, test_size=0.2, random_state=42
+            X, y_encoded, test_size=self.test_size, random_state=self.random_state
         )
