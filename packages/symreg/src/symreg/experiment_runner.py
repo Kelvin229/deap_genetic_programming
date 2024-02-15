@@ -73,9 +73,9 @@ class ExperimentRunner:
                 seed,
                 self.population_size,
                 self.num_generations,
-                hof_size=elites,
+                hof_size=1,
             )
-            _, log, _ = gp_inst.run(crossover_rate, mutation_rate)
+            _, log, _ = gp_inst.run(crossover_rate, mutation_rate, nelites=elites)
 
             gens, avgs, bests = log.select("gen", "avg", "min")
             for gen, avg, best in zip(gens, avgs, bests):
