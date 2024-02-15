@@ -60,8 +60,12 @@ class GPEngine:
             )
         )
         depth_stats = tools.Statistics(lambda ind: ind.height)
+        hit_stats = tools.Statistics(lambda ind: ind.hits)
         self.stats = tools.MultiStatistics(
-            fitness=fitness_stats, test_fitness=test_fitness_stats, depth=depth_stats
+            fitness=fitness_stats,
+            test_fitness=test_fitness_stats,
+            depth=depth_stats,
+            hits=hit_stats,
         )
         self.stats.register("avg", np.mean)
         self.stats.register("max", np.max)
@@ -135,6 +139,8 @@ class GPEngine:
         y_preds = np.round(sigmoid(func(*columns)))
         # Calculate accuracy
         accuracy = np.mean(y_preds == y)
+        # register hits
+        individual.hits = np.sum(y_preds == y)
         return (accuracy,)
 
     def _setup_deap(self):
@@ -143,7 +149,9 @@ class GPEngine:
         fitness, individuals, population, and the genetic operators.
         """
         creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-        creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
+        creator.create(
+            "Individual", gp.PrimitiveTree, fitness=creator.FitnessMax, hits=0
+        )
 
         self.toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=1, max_=2)
         self.toolbox.register(
