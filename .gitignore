@@ -1,9 +1,9 @@
 4P82_a1.pdf
 symreg_results/
 riceclf_output/
+tmp/
 a1_marking.pdf
-
-tmp/*
+result.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
