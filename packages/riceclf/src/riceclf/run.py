@@ -128,6 +128,7 @@ def setup_parser(parser: argparse.ArgumentParser):
 def _to_csv(logbook: tools.Logbook, csvfile: io.TextIOWrapper):
     gens = logbook.select("gen")
     train_avgfits, train_maxfits = logbook.chapters["fitness"].select("avg", "max")
+    avgtrain_hits = logbook.chapters["hits"].select("avg")
     test_avgfits, test_maxfits = logbook.chapters["test_fitness"].select("avg", "max")
     writer = csv.writer(csvfile)
     writer.writerow(
@@ -135,14 +136,17 @@ def _to_csv(logbook: tools.Logbook, csvfile: io.TextIOWrapper):
             "Generation",
             "TrainAverageFitness",
             "TrainMaxFitness",
+            "TrainAvgHits",
             "TestAverageFitness",
             "TestMaxFitness",
         ]
     )
-    for gen, avgfit_trn, maxfit_trn, avgfit_tst, maxfit_tst in zip(
-        gens, train_avgfits, train_maxfits, test_avgfits, test_maxfits
+    for gen, avgfit_trn, maxfit_trn, avghits_trn, avgfit_tst, maxfit_tst in zip(
+        gens, train_avgfits, train_maxfits, avgtrain_hits, test_avgfits, test_maxfits
     ):
-        writer.writerow([gen, avgfit_trn, maxfit_trn, avgfit_tst, maxfit_tst])
+        writer.writerow(
+            [gen, avgfit_trn, maxfit_trn, avghits_trn, avgfit_tst, maxfit_tst]
+        )
 
 
 def exec_command(args: argparse.Namespace):
@@ -151,7 +155,7 @@ def exec_command(args: argparse.Namespace):
     """
     random.seed(args.random_seed)
     # Initialize the data handler and preprocess the data
-    data_handler = DataHandler(args.dataset_path)
+    data_handler = DataHandler(args.dataset_path, random_state=args.random_seed)
     data_handler.preprocess()
 
     # Initialize and run the genetic programming engine

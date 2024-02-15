@@ -120,7 +120,7 @@ class GeneticProgramming:
         size_penalty_value = self.size_penalty(individual)
         return (mse + size_penalty_value,)
 
-    def run(self, crossover_rate, mutation_rate):
+    def run(self, crossover_rate, mutation_rate, nelites=0):
         """
         Runs the genetic programming algorithm.
 
@@ -144,7 +144,7 @@ class GeneticProgramming:
             ind.fitness.values = fit
 
         for gen in range(self.num_generations):
-            offspring = self.toolbox.select(pop, len(pop))
+            offspring = self.toolbox.select(pop, len(pop) - nelites)
 
             # Clone the selected individuals
             offspring = list(map(self.toolbox.clone, offspring))
@@ -160,6 +160,12 @@ class GeneticProgramming:
                 if random.random() < mutation_rate:
                     self.toolbox.mutate(mutant)
                     del mutant.fitness.values
+
+            # include elites from previous generation
+            elites = sorted(pop, key=lambda ind: ind.fitness.values, reverse=True)[
+                :nelites
+            ]
+            offspring = offspring + elites
 
             # Evaluate the individuals with an invalid fitness
             invalid_ind = [ind for ind in offspring if not ind.fitness.valid]

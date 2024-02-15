@@ -27,6 +27,7 @@ def exec_command(args: argparse.Namespace):
     columns = [
         "TrainAverageFitness",
         "TrainMaxFitness",
+        "TrainAvgHits",
         "TestAverageFitness",
         "TestMaxFitness",
     ]

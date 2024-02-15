@@ -7,10 +7,10 @@ import pandas as pd
 from .experiment_runner import ExperimentRunner
 
 # Constants
-NUM_GENERATIONS = 30
+NUM_GENERATIONS = 50
 POPULATION_SIZE = 500
 RESULT_DIR = r"symreg_results"
-SEEDS = range(10)
+SEEDS = [57, 28975, 957, 2974, 1280394, 1084, 2489, 24800, 32579, 4937538]
 
 # Parameter sets for experiments
 PARAMETER_SETS = [
