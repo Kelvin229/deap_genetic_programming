@@ -62,5 +62,9 @@ class DataHandler:
         y_encoded = le.fit_transform(y)
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y_encoded, test_size=self.test_size, random_state=self.random_state
+            X,
+            y_encoded,
+            test_size=self.test_size,
+            random_state=self.random_state,
+            stratify=y_encoded,
         )

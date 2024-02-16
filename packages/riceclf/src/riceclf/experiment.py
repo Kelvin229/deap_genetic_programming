@@ -115,11 +115,15 @@ def exec_command(args: argparse.Namespace):
     """
     The main function to execute the GP algorithm for the rice classification task.
     """
-    run_cmd_template = [
+    dirpath: pathlib.Path = args.output_dir
+    dirpath.mkdir(exist_ok=True, parents=True)
+    run_cmd = [
         sys.executable,
         "-m",
         "riceclf",
         "run",
+        "-o",
+        dirpath,
         *(["-i", args.dataset_path] if args.dataset_path is not None else []),
         *(
             ["-g", str(args.num_generations)]
@@ -144,16 +148,15 @@ def exec_command(args: argparse.Namespace):
         *(["-e", str(args.elitism_size)] if args.elitism_size is not None else []),
         "--verbose" if args.verbose else "--no-verbose",
     ]
-    dirpath: pathlib.Path = args.output_dir
-    dirpath.mkdir(exist_ok=True, parents=True)
+    for seed in args.random_seeds:
+        logging.info("Seed %s", seed)
+        subprocess.run(
+            run_cmd + ["--seed", str(seed)],
+            stderr=sys.stderr,
+        )
     with contextlib.ExitStack() as stack:
         csvfiles = [
-            stack.enter_context(open(dirpath.joinpath(f"seed_{seed}.csv"), "w+"))
-            for seed in args.random_seeds
+            stack.enter_context(open(path, "r")) for path in dirpath.glob("run_*.csv")
         ]
-        for seed, file in zip(args.random_seeds, csvfiles):
-            logging.info("Seed %s", seed)
-            run_cmd = run_cmd_template + ["--seed", str(seed)]
-            subprocess.run(run_cmd, stdout=file, stderr=sys.stderr)
         with open(dirpath.joinpath("result.csv"), "w") as output:
             exec_avg(csvfiles, output)
