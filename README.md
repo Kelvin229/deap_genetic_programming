@@ -26,16 +26,17 @@ $ symreg --help
 ```
 
 3. Run the rice classification experiment.
-- We can run the experiment and plot the results using the following commands:
+- We can run the experiment using the following commands:
 ```sh
 $ riceclf experiment -o tmp --seed 123 456 789 2974 2479 24755 74593 57993 24749 279
 ```
+- Now give it some time for each (alot of time, go get a coffee or something... and come back to the program), to allow it to process until its all done.
+- Then to plot the results, run the following command:
 ```sh
 $ riceclf plot tmp/result.csv tmp/result.png
 ```
-Now give it some time for each (alot of time, go get a coffee or something... and come back to the program), to process it until its all done, then you can check the results in the riceclf_output folder at the root of the project.
-
-4. For an individual run, create a folder `riceclf_output` and then do:
+- Now check the `tmp` folder for the results in the root directory of the project.
+4. For an individual run, create a folder `riceclf_output` using the following command:
 ```sh
 $ mkdir riceclf_output
 ```
