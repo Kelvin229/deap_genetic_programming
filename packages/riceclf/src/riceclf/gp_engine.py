@@ -48,13 +48,12 @@ class GPEngine:
         self.number_of_generations = number_of_generations
         self.elitism_size = elitism_size
 
-        self.toolbox = base.Toolbox()
-        self.pset = self._create_primitive_set()
-        self._setup_deap()
+        self.pset = self._create_primitive_set(data_handler.X_train.columns)
         fitness_stats = tools.Statistics(lambda ind: ind.fitness.values)
         test_fitness_stats = tools.Statistics(
             lambda ind: self._evalFitness(
                 ind,
+                pset=self.pset,
                 X=self.data_handler.X_test,
                 y=self.data_handler.y_test,
             )
@@ -72,51 +71,27 @@ class GPEngine:
 
         self.verbose = verbose
 
-    def _create_primitive_set(self):
+    def _create_primitive_set(self, variables):
         """
         Creates the primitive set for the genetic programming process.
 
         Returns:
             deap.gp.PrimitiveSet: The configured primitive set.
         """
-        pset = gp.PrimitiveSetTyped(
-            "MAIN", (float,) * len(self.data_handler.X_train.columns), float
-        )
+        pset = gp.PrimitiveSetTyped("MAIN", (float,) * len(variables), float)
         pset.addPrimitive(np.add, (float, float), float, name="add")
         pset.addPrimitive(np.subtract, (float, float), float, name="sub")
         pset.addPrimitive(np.multiply, (float, float), float, name="mul")
-        # pset.addPrimitive(
-        #     lambda x, y: 0 if abs(y) <= 1e-04 else x / y,
-        #     (float, float),
-        #     float,
-        #     name="protectedDiv",
-        # )
         pset.addPrimitive(np.negative, (float,), float, name="neg")
-        # pset.addPrimitive(np.sin, (float,), float)
-        # pset.addPrimitive(np.cos, (float,), float)
-        # pset.addPrimitive(np.less, (float, float), bool, name="lessThan")
-        # pset.addPrimitive(np.allclose, (float, float), bool, name="eq")
-        # pset.addPrimitive(np.logical_not, (bool,), bool, name="not_")
-        # pset.addPrimitive(np.logical_and, (bool, bool), bool, name="and_")
-        # pset.addPrimitive(np.logical_or, (bool, bool), bool, name="or_")
-        # pset.addPrimitive(np.logical_xor, (bool, bool), bool, name="xor")
-        # pset.addPrimitive(np.where, (bool, float, float), float, name="ifThenElse")
-        # pset.addTerminal(True, bool, name="True")
-        # pset.addTerminal(False, bool, name="False")
 
         def rand101():
             return random.uniform(-1, 1)
 
         pset.addEphemeralConstant("rand101", rand101, float)
-        pset.renameArguments(
-            **{
-                f"ARG{i}": column
-                for i, column in enumerate(self.data_handler.X_train.columns)
-            }
-        )
+        pset.renameArguments(**{f"ARG{i}": var for i, var in enumerate(variables)})
         return pset
 
-    def _evalFitness(self, individual, X=None, y=None):
+    def _evalFitness(self, individual, pset, X, y):
         """
         Evaluates the fitness of an individual based on its accuracy of classifying
         the data.
@@ -129,12 +104,12 @@ class GPEngine:
         Returns:
             tuple: A one-element tuple containing the accuracy of the individual on the data.
         """
-        X = X if X is not None else self.data_handler.X_train
-        y = y if y is not None else self.data_handler.y_train
+        if individual.height >= 15:
+            return (0.0,)
         # Compile the individual's code to a function
-        func = self.toolbox.compile(expr=individual)
+        func = gp.compile(expr=individual, pset=pset)
         # Predict classes for the training set using the individual's function
-        _, ncols = X.shape
+        _, ncols = np.shape(X)
         columns = [np.asarray(col).reshape(-1) for col in np.hsplit(X, ncols)]
         y_preds = np.round(sigmoid(func(*columns)))
         # Calculate accuracy
@@ -143,7 +118,7 @@ class GPEngine:
         individual.hits = np.sum(y_preds == y)
         return (accuracy,)
 
-    def _setup_deap(self):
+    def _setup_deap(self, X, y):
         """
         Sets up the genetic programming environment using DEAP, including
         fitness, individuals, population, and the genetic operators.
@@ -153,23 +128,20 @@ class GPEngine:
             "Individual", gp.PrimitiveTree, fitness=creator.FitnessMax, hits=0
         )
 
-        self.toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=1, max_=2)
-        self.toolbox.register(
-            "individual", tools.initIterate, creator.Individual, self.toolbox.expr
+        toolbox = base.Toolbox()
+        toolbox.register("expr", gp.genHalfAndHalf, pset=self.pset, min_=1, max_=2)
+        toolbox.register(
+            "individual", tools.initIterate, creator.Individual, toolbox.expr
         )
-        self.toolbox.register(
-            "population", tools.initRepeat, list, self.toolbox.individual
-        )
-        self.toolbox.register("compile", gp.compile, pset=self.pset)
-        self.toolbox.register("evaluate", self._evalFitness)
-        self.toolbox.register("select", tools.selTournament, tournsize=5)
-        self.toolbox.register("mate", gp.cxOnePoint)
-        self.toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
-        self.toolbox.register(
-            "mutate", gp.mutUniform, expr=self.toolbox.expr_mut, pset=self.pset
-        )
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+        toolbox.register("evaluate", self._evalFitness, pset=self.pset, X=X, y=y)
+        toolbox.register("select", tools.selTournament, tournsize=3)
+        toolbox.register("mate", gp.cxOnePoint)
+        toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
+        toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=self.pset)
+        return toolbox
 
-    def run(self):
+    def run(self, X=None, y=None):
         """
         Executes the genetic programming algorithm.
 
@@ -177,12 +149,15 @@ class GPEngine:
             tuple: A tuple containing the final population, the logbook with the recorded
             statistics, the hall of fame, and the accuracy of the best individual on the test set.
         """
-        pop = self.toolbox.population(n=self.population_size)
+        X = X if X is not None else self.data_handler.X_train
+        y = y if y is not None else self.data_handler.y_train
+        toolbox = self._setup_deap(X, y)
+        pop = toolbox.population(n=self.population_size)
         hof = tools.HallOfFame(1)
 
         pop, logbook = self.eaSimpleElitism(
             pop,
-            self.toolbox,
+            toolbox,
             self.crossover_probability,
             self.mutation_probability,
             self.elitism_size,
@@ -193,16 +168,16 @@ class GPEngine:
         )
 
         # Apply the compiled function to each row in the test set
-        best_ind = hof[0]
-        (test_accuracy,) = self.toolbox.evaluate(
-            best_ind, X=self.data_handler.X_test, y=self.data_handler.y_test
-        )
+        # best_ind = hof[0]
+        # (test_accuracy,) = self._evalFitness(
+        #     best_ind, pset=self.pset, X=self.data_handler.X_test, y=self.data_handler.y_test
+        # )
+        #
+        # logging.info("Test Accuracy of the best individual: %.2f", test_accuracy)
+        # logging.info("Tree depth of the best individual: %s", best_ind.height)
+        # logging.info("Best Individual: %s", best_ind)
 
-        logging.info("Test Accuracy of the best individual: %.2f", test_accuracy)
-        logging.info("Tree depth of the best individual: %s", best_ind.height)
-        logging.info("Best Individual: %s", best_ind)
-
-        return pop, logbook, hof, test_accuracy
+        return pop, logbook, hof, 0.0
 
     def eaSimpleElitism(
         self,

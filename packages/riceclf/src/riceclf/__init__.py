@@ -9,7 +9,7 @@ from .experiment import (
     setup_parser as setup_experiment_parser,
     exec_command as exec_experiment_command,
 )
-
+from .test import setup_parser as setup_test_parser, exec_command as exec_test_command
 
 # Configure logging to display info level logs
 logging.basicConfig(
@@ -34,6 +34,10 @@ plot_parser.set_defaults(__exec=exec_plot_command)
 experiment_parser = subparser_creator.add_parser("experiment")
 setup_experiment_parser(experiment_parser)
 experiment_parser.set_defaults(__exec=exec_experiment_command)
+
+test_parser = subparser_creator.add_parser("test")
+setup_test_parser(test_parser)
+test_parser.set_defaults(__exec=exec_test_command)
 
 
 def main() -> int:

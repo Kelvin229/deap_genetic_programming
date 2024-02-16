@@ -28,10 +28,22 @@ def _plot_fitness(
         filepath (str): The path to the file where the plot will be saved.
     """
     plt.figure(figsize=(10, 5))
-    plt.plot(gens, train_avgfits, label="Training Average Fitness")
-    plt.plot(gens, train_maxfits, label="Training Maximum (Best) Fitness")
-    plt.plot(gens, test_avgfits, label="Test Average Fitness")
-    plt.plot(gens, test_maxfits, label="Test Maximum (Best) Fitness")
+    plt.plot(gens, train_avgfits, label="Training Average Fitness", color="tab:red")
+    plt.plot(
+        gens,
+        train_maxfits,
+        label="Training Maximum (Best) Fitness",
+        color="tab:red",
+        linestyle="--",
+    )
+    plt.plot(gens, test_avgfits, label="Test Average Fitness", color="tab:blue")
+    plt.plot(
+        gens,
+        test_maxfits,
+        label="Test Maximum (Best) Fitness",
+        color="tab:blue",
+        linestyle="--",
+    )
     plt.xlabel("Generations")
     plt.ylabel("Fitness")
     plt.title("Fitness over Generations")
