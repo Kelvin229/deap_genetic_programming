@@ -1,3 +1,4 @@
+import pathlib
 import sys
 import argparse
 import subprocess
@@ -25,12 +26,12 @@ def setup_parser(parser: argparse.ArgumentParser):
 
     parser.add_argument(
         "-o",
-        "--outfile",
-        dest="output_file",
-        type=argparse.FileType("w"),
-        default=sys.stdout,
+        "--outdir",
+        dest="output_dir",
+        type=pathlib.Path,
+        default="riceclf_experiment",
         required=False,
-        help="the CSV filepath to save the aggregated data [default: stdout]",
+        help="the filepath to the directory where to save the aggregated data",
     )
 
     parser.add_argument(
@@ -143,13 +144,16 @@ def exec_command(args: argparse.Namespace):
         *(["-e", str(args.elitism_size)] if args.elitism_size is not None else []),
         "--verbose" if args.verbose else "--no-verbose",
     ]
+    dirpath: pathlib.Path = args.output_dir
+    dirpath.mkdir(exist_ok=True, parents=True)
     with contextlib.ExitStack() as stack:
         csvfiles = [
-            stack.enter_context(tempfile.NamedTemporaryFile(mode="w+"))
-            for _ in args.random_seeds
+            stack.enter_context(open(dirpath.joinpath(f"seed_{seed}.csv"), "w+"))
+            for seed in args.random_seeds
         ]
         for seed, file in zip(args.random_seeds, csvfiles):
             logging.info("Seed %s", seed)
             run_cmd = run_cmd_template + ["--seed", str(seed)]
             subprocess.run(run_cmd, stdout=file, stderr=sys.stderr)
-        exec_avg(csvfiles, args.output_file)
+        with open(dirpath.joinpath("result.csv"), "w") as output:
+            exec_avg(csvfiles, output)
